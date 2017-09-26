@@ -1,3 +1,3 @@
-import DeckSwiper from './DeckSwiper';
+import CardSwiper from './CardSwiper';
 
-export default DeckSwiper;
+export default CardSwiper;

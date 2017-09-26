@@ -12,9 +12,6 @@ import {
 } from 'react-native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const SWIPE_THRESHOLD = 0.25 * SCREEN_WIDTH;
-const SWIPE_OUT_DURATION = 150;
-const PRELOAD_CARDS = 3;
 
 const styles = StyleSheet.create({
   container: {
@@ -37,39 +34,60 @@ const propTypes = {
 
   renderCard: PropTypes.func.isRequired,
   renderSwipedAll: PropTypes.func,
+  cardIndex: PropTypes.number,
 
   onSwipeRight: PropTypes.func,
   onSwipeLeft: PropTypes.func,
+  onSwipeAll: PropTypes.func,
 
-  swipeThreshold: PropTypes.number,
-  preloadCards: PropTypes.number,
+  swipeThresholdDistanceFactor: PropTypes.number,
   swipeOutDuration: PropTypes.number,
+  preloadCards: PropTypes.number,
 
   containerStyle: ViewPropTypes.style,
 };
 
 const defaultProps = {
   renderSwipedAll: undefined,
+  cardIndex: 0,
+
   onSwipeRight: () => { },
   onSwipeLeft: () => { },
-  containerStyle: undefined,
+  onSwipeAll: () => { },
+
+  swipeThresholdDistanceFactor: 0.25,
+  swipeOutDuration: 150,
+  preloadCards: 3,
+
+  containerStyle: {},
 };
 
-class DeckSwiper extends Component {
+class CardSwiper extends Component {
   constructor(props) {
     super(props);
     this.position = new Animated.ValueXY();
     this.initPanResponder(this.position);
     this.state = {
-      currentCardIndex: 0,
+      currentCardIndex: props.cardIndex,
       containerLayout: {},
       cardLayout: {},
     };
   }
 
   componentWillReceiveProps(nextProps) {
+    this.handleReceiveNewDataSource(nextProps);
+    this.handleReceiveNewCardIndex(nextProps);
+  }
+
+  handleReceiveNewDataSource = (nextProps) => {
     if (!_.isEqual(nextProps.dataSource, this.props.dataSource)) {
-      this.setState({ currentCardIndex: 0 });
+      this.setState({ currentCardIndex: nextProps.cardIndex });
+    }
+  }
+  
+  handleReceiveNewCardIndex = (nextProps) => {
+    if (nextProps.cardIndex !== this.state.currentCardIndex) {
+      this.setState({ currentCardIndex: nextProps.cardIndex });
     }
   }
 
@@ -80,9 +98,12 @@ class DeckSwiper extends Component {
         position.setValue({ x: gesture.dx, y: gesture.dy });
       },
       onPanResponderRelease: (event, gesture) => {
-        if (gesture.dx > SWIPE_THRESHOLD) {
+        const { swipeThresholdDistanceFactor } = this.props;
+        const { containerLayout } = this.state;
+        // TODO: add swipeThresholdSpeedFactor
+        if (gesture.dx > swipeThresholdDistanceFactor * containerLayout.width) {
           this.forceSwipe('right');
-        } else if (gesture.dx < -SWIPE_THRESHOLD) {
+        } else if (gesture.dx < -swipeThresholdDistanceFactor * containerLayout.width) {
           this.forceSwipe('left');
         } else {
           this.resetCardPosition();
@@ -111,7 +132,7 @@ class DeckSwiper extends Component {
     const x = direction === 'right' ? SCREEN_WIDTH : -SCREEN_WIDTH;
     Animated.timing(this.position, {
       toValue: { x, y: 0 },
-      duration: SWIPE_OUT_DURATION,
+      duration: this.props.swipeOutDuration,
     }).start(() => this.handleSwipeComplete(direction));
   }
 
@@ -119,17 +140,18 @@ class DeckSwiper extends Component {
     const { onSwipeLeft, onSwipeRight, dataSource } = this.props;
     const item = dataSource[this.state.currentCardIndex];
 
-    switch (direction) {
-      case 'right':
-        onSwipeRight(item);
-        break;
-      case 'left':
-        onSwipeLeft(item);
-        break;
-      default:
-    }
     this.position.setValue({ x: 0, y: 0 });
-    this.setState({ currentCardIndex: this.state.currentCardIndex + 1 });
+    this.setState({ currentCardIndex: this.state.currentCardIndex + 1 }, () => {
+      switch (direction) {
+        case 'right':
+          onSwipeRight(item);
+          break;
+        case 'left':
+          onSwipeLeft(item);
+          break;
+        default:
+      }
+    });
   }
 
   resetCardPosition() {
@@ -187,26 +209,28 @@ class DeckSwiper extends Component {
   }
 
   getCardAnimatedStyles() {
+    // TODO: make this basing on both position.x and position.y
     const rotate = this.position.x.interpolate({
-      inputRange: [-SCREEN_WIDTH * 1.5, 0, SCREEN_WIDTH * 1.5],
-      outputRange: ['-120deg', '0deg', '120deg'],
+      // TODO: make this a props
+      inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
+      outputRange: ['-30deg', '0deg', '30deg'],
     });
-
+    
     return ({
       ...this.position.getLayout(),
       transform: [{ rotate }],
     });
   }
-
+  
   getBackgroundCardAnimatedStyles(i) {
     if (i === this.state.currentCardIndex + 1) {
+      // TODO: make this basing on both position.x and position.y
       const scale = this.position.x.interpolate({
-        inputRange: [-SCREEN_WIDTH * 1.5, 0, SCREEN_WIDTH * 1.5],
+        // TODO: make this a props
+        inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
         outputRange: [1, 0.95, 1],
       });
-      return ({
-        transform: [{ scale }],
-      });
+      return ({ transform: [{ scale }] });
     }
     return ({ opacity: 0 });
   }
@@ -219,6 +243,7 @@ class DeckSwiper extends Component {
 
   renderCards() {
     if (this.state.currentCardIndex >= this.props.dataSource.length) {
+      this.props.onSwipeAll();
       return this.renderSwipedAll();
     }
 
@@ -229,7 +254,7 @@ class DeckSwiper extends Component {
         return (
           <Animated.View
             ref={this.setCardRef}
-            key={item.id}
+            key={`react-native-card-swiper-card-${i}`} // eslint-disable-line react/no-array-index-key
             style={[
               styles.cardContainer,
               this.getCardLayoutStyles(),
@@ -242,10 +267,10 @@ class DeckSwiper extends Component {
             {this.props.renderCard(item)}
           </Animated.View>
         );
-      } else if (i < this.state.currentCardIndex + PRELOAD_CARDS) {
+      } else if (i < this.state.currentCardIndex + this.props.preloadCards) {
         return (
           <Animated.View
-            key={item.id}
+            key={`react-native-card-swiper-card-${i}`} // eslint-disable-line react/no-array-index-key
             style={[
               styles.cardContainer,
               this.getCardLayoutStyles(),
@@ -277,7 +302,7 @@ class DeckSwiper extends Component {
   }
 }
 
-DeckSwiper.propTypes = propTypes;
-DeckSwiper.defaultProps = defaultProps;
+CardSwiper.propTypes = propTypes;
+CardSwiper.defaultProps = defaultProps;
 
-export default DeckSwiper;
+export default CardSwiper;
