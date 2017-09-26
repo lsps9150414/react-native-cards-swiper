@@ -1,0 +1,43 @@
+{
+  "name": "react-native-card-swiper",
+  "version": "1.0.0",
+  "description": "Highly customizable Tinder like card swiper for react-native!",
+  "main": "index.js",
+  "repository": "git@github.com:lsps9150414/react-native-card-swiper.git",
+  "keywords": [
+    "react-native",
+    "reactnative",
+    "react-native-component",
+    "tinder",
+    "cards",
+    "card",
+    "swipe",
+    "swiper",
+    "deck",
+    "animation"
+  ],
+  "author": "Philip Chen <lsps9150414@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "^4.17.4",
+    "prop-types": "^15.6.0"
+  },
+  "peerDependencies": {
+    "react-native": "^0.41.2"
+  },
+  "devDependencies": {
+    "babel-eslint": "^8.0.0",
+    "eslint": "^4.7.2",
+    "eslint-config-airbnb": "^15.1.0",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-jsx-a11y": "^5.1.1",
+    "eslint-plugin-react": "^7.4.0",
+    "import-sort-style-renke": "^3.0.0"
+  },
+  "importSort": {
+    ".js, .jsx, .es6, .es": {
+      "parser": "babylon",
+      "style": "renke"
+    }
+  }
+}
