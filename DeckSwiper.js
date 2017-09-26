@@ -34,10 +34,17 @@ const propTypes = {
   dataSource: PropTypes.arrayOf(PropTypes.shape({
     id: PropTypes.any.isRequired,
   })).isRequired,
+
   renderCard: PropTypes.func.isRequired,
   renderSwipedAll: PropTypes.func,
+
   onSwipeRight: PropTypes.func,
   onSwipeLeft: PropTypes.func,
+
+  swipeThreshold: PropTypes.number,
+  preloadCards: PropTypes.number,
+  swipeOutDuration: PropTypes.number,
+
   containerStyle: ViewPropTypes.style,
 };
 
@@ -132,11 +139,21 @@ class DeckSwiper extends Component {
   }
 
   updateContainerLayout = ({ nativeEvent }) => {
-    this.setState({ containerLayout: nativeEvent.layout });
+    if (
+      this.state.containerLayout.height !== nativeEvent.layout.height &&
+      this.state.containerLayout.width !== nativeEvent.layout.width
+    ) {
+      this.setState({ containerLayout: nativeEvent.layout });
+    }
   }
 
   updateCardLayout = ({ nativeEvent }) => {
-    this.setState({ cardLayout: nativeEvent.layout });
+    if (
+      this.state.cardLayout.height !== nativeEvent.layout.height &&
+      this.state.cardLayout.width !== nativeEvent.layout.width
+    ) {
+      this.setState({ cardLayout: nativeEvent.layout });
+    }
   }
 
   getContainerHeightStyle() {
