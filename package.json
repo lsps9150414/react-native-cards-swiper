@@ -1,9 +1,9 @@
 {
-  "name": "react-native-card-swiper",
+  "name": "react-native-cards-swiper",
   "version": "1.0.0",
   "description": "Highly customizable Tinder like card swiper for react-native!",
   "main": "index.js",
-  "repository": "git@github.com:lsps9150414/react-native-card-swiper.git",
+  "repository": "git@github.com:lsps9150414/react-native-cards-swiper.git",
   "keywords": [
     "react-native",
     "reactnative",
