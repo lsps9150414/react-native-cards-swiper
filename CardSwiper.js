@@ -66,11 +66,12 @@ class CardSwiper extends Component {
   constructor(props) {
     super(props);
     this.position = new Animated.ValueXY();
-    this.initPanResponder(this.position);
+    this.containerLayout = {};
+    this.cardLayout = {};
+    this.panResponder = {};
+
     this.state = {
       currentCardIndex: props.cardIndex,
-      containerLayout: {},
-      cardLayout: {},
     };
   }
 
@@ -99,7 +100,7 @@ class CardSwiper extends Component {
       },
       onPanResponderRelease: (event, gesture) => {
         const { swipeThresholdDistanceFactor } = this.props;
-        const { containerLayout } = this.state;
+        const { containerLayout } = this;
         // TODO: add swipeThresholdSpeedFactor
         if (gesture.dx > swipeThresholdDistanceFactor * containerLayout.width) {
           this.forceSwipe('right');
@@ -110,14 +111,6 @@ class CardSwiper extends Component {
         }
       },
     });
-  }
-
-  setContainerRef = (ref) => {
-    this.Container = ref;
-  }
-
-  setCardRef = (ref) => {
-    this.Card = ref;
   }
 
   swipeRight() {
@@ -162,49 +155,37 @@ class CardSwiper extends Component {
 
   updateContainerLayout = ({ nativeEvent }) => {
     if (
-      this.state.containerLayout.height !== nativeEvent.layout.height &&
-      this.state.containerLayout.width !== nativeEvent.layout.width
+      this.containerLayout.height !== nativeEvent.layout.height &&
+      this.containerLayout.width !== nativeEvent.layout.width
     ) {
-      this.setState({ containerLayout: nativeEvent.layout });
+      this.containerLayout = nativeEvent.layout;
+      this.initPanResponder(this.position);
     }
-  }
-
-  updateCardLayout = ({ nativeEvent }) => {
-    if (
-      this.state.cardLayout.height !== nativeEvent.layout.height &&
-      this.state.cardLayout.width !== nativeEvent.layout.width
-    ) {
-      this.setState({ cardLayout: nativeEvent.layout });
-    }
-  }
-
-  getContainerHeightStyle() {
-    const flattenContainerStyle = StyleSheet.flatten(this.props.containerStyle);
-    const containerBorderWidth = (flattenContainerStyle.borderWidth || 0) + (flattenContainerStyle.padding || 0);
-    return ({
-      height: this.state.cardLayout.height + (containerBorderWidth * 2),
-    });
   }
 
   getCardLayoutStyles() {
-    const flattenContainerStyle = StyleSheet.flatten(this.props.containerStyle);
-    const containerBorderWidth = flattenContainerStyle.borderWidth || 0;
+    const containerStyle = StyleSheet.flatten(this.props.containerStyle);
 
-    const containerPadding = flattenContainerStyle.padding || 0;
-    const containerPaddingTop = flattenContainerStyle.paddingTop !== undefined ?
-      flattenContainerStyle.paddingTop : containerPadding;
-    const containerPaddingLeft = flattenContainerStyle.paddingLeft !== undefined ?
-      flattenContainerStyle.paddingLeft : containerPadding;
-    const containerPaddingRight = flattenContainerStyle.paddingRight !== undefined ?
-      flattenContainerStyle.paddingRight : containerPadding;
+    // const containerBorderTopWidth = containerStyle.borderTopWidth || containerStyle.borderWidth || 0;
+    // const containerBorderBottomWidth = containerStyle.borderBottomWidth || containerStyle.borderWidth || 0;
+    // const containerVerticalBorderWidth = containerBorderTopWidth + containerBorderBottomWidth;
 
-    const actualPadding = containerPaddingLeft + containerPaddingRight;
-    const offset = (containerBorderWidth * 2) + actualPadding;
+    const containerBorderLeftWidth = containerStyle.borderLeftWidth || containerStyle.borderWidth || 0;
+    const containerBorderRightWidth = containerStyle.borderRightWidth || containerStyle.borderWidth || 0;
+    const containerHorizontalBorderWidth = containerBorderLeftWidth + containerBorderRightWidth;
+
+    const containerPaddingTop = containerStyle.paddingTop || containerStyle.padding || 0;
+
+    const containerPaddingLeft = containerStyle.paddingLeft || containerStyle.padding || 0;
+    const containerPaddingRight = containerStyle.paddingRight || containerStyle.padding || 0;
+    const containerHorizontalPadding = containerPaddingLeft + containerPaddingRight;
+
+    const widthOffset = containerHorizontalBorderWidth + containerHorizontalPadding;
 
     return ({
-      width: this.state.containerLayout.width - offset,
-      marginLeft: containerPaddingLeft,
+      width: this.containerLayout.width - widthOffset,
       marginTop: containerPaddingTop,
+      marginLeft: containerPaddingLeft,
     });
   }
 
@@ -253,7 +234,6 @@ class CardSwiper extends Component {
       } else if (i === this.state.currentCardIndex) {
         return (
           <Animated.View
-            ref={this.setCardRef}
             key={`react-native-card-swiper-card-${i}`} // eslint-disable-line react/no-array-index-key
             style={[
               styles.cardContainer,
@@ -261,7 +241,6 @@ class CardSwiper extends Component {
               this.getCardAnimatedStyles(),
               { zIndex: 99 },
             ]}
-            onLayout={this.updateCardLayout}
             {...this.panResponder.panHandlers}
           >
             {this.props.renderCard(item)}
@@ -288,13 +267,11 @@ class CardSwiper extends Component {
   render() {
     return (
       <View
-        ref={this.setContainerRef}
+        onLayout={this.updateContainerLayout}
         style={[
           styles.container,
-          this.getContainerHeightStyle(),
           this.props.containerStyle,
         ]}
-        onLayout={this.updateContainerLayout}
       >
         {this.renderCards()}
       </View>
