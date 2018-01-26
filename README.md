@@ -5,9 +5,12 @@ Highly customizable Tinder like card swiper for react-native!
 - Cards stretch with the container.
 - Controllable current card index.
 
+## Know issues
+- RN's Android `overflow: visible` cause card being clipped by container. https://github.com/facebook/react-native/issues/17074
 ## Roadmap
 
 ### TODO
+
 
 ## Props
 ```
