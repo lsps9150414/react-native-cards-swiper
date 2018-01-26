@@ -7,6 +7,8 @@ Highly customizable Tinder like card swiper for react-native!
 
 ## Know issues
 - RN's Android `overflow: visible` cause card being clipped by container. https://github.com/facebook/react-native/issues/17074
+- Card flickers during dragging on Android.
+
 ## Roadmap
 
 ### TODO
