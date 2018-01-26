@@ -15,10 +15,16 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  contentContainer: {
+    flex: 1,
+    alignSelf: 'stretch',
   },
   cardContainer: {
-    flex: 1,
     position: 'absolute',
+    overflow: 'hidden',
   },
   swipedAllContainer: {
     flex: 1,
@@ -27,51 +33,51 @@ const styles = StyleSheet.create({
   },
 });
 
-const propTypes = {
-  dataSource: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.any.isRequired,
-  })).isRequired,
+export default class CardSwiper extends Component {
+  static propTypes = {
+    data: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.any.isRequired,
+    })).isRequired,
 
-  renderCard: PropTypes.func.isRequired,
-  renderSwipedAll: PropTypes.func,
-  cardIndex: PropTypes.number,
+    renderCard: PropTypes.func.isRequired,
+    renderSwipedAll: PropTypes.func,
+    cardIndex: PropTypes.number,
 
-  onSwipeRight: PropTypes.func,
-  onSwipeLeft: PropTypes.func,
-  onSwipeAll: PropTypes.func,
+    onSwipeRight: PropTypes.func,
+    onSwipeLeft: PropTypes.func,
+    onSwipeAll: PropTypes.func,
 
-  swipeThresholdDistanceFactor: PropTypes.number,
-  swipeOutDuration: PropTypes.number,
-  preloadCards: PropTypes.number,
+    swipeThresholdDistanceFactor: PropTypes.number,
+    swipeOutDuration: PropTypes.number,
+    preloadCards: PropTypes.number,
 
-  containerStyle: ViewPropTypes.style,
-};
+    containerStyle: ViewPropTypes.style,
+  };
 
-const defaultProps = {
-  renderSwipedAll: undefined,
-  cardIndex: 0,
+  static defaultProps = {
+    data: [],
+    renderSwipedAll: undefined,
+    cardIndex: undefined,
 
-  onSwipeRight: () => { },
-  onSwipeLeft: () => { },
-  onSwipeAll: () => { },
+    onSwipeRight: item => item,
+    onSwipeLeft: item => item,
+    onSwipeAll: () => null,
 
-  swipeThresholdDistanceFactor: 0.25,
-  swipeOutDuration: 150,
-  preloadCards: 3,
+    swipeThresholdDistanceFactor: 0.25,
+    swipeOutDuration: 150,
+    preloadCards: 3,
 
-  containerStyle: {},
-};
+    containerStyle: undefined,
+  };
 
-class CardSwiper extends Component {
   constructor(props) {
     super(props);
-    this.position = new Animated.ValueXY();
-    this.containerLayout = {};
-    this.cardLayout = {};
-    this.panResponder = {};
+    this.swipeCardAnimatedPosition = new Animated.ValueXY();
 
     this.state = {
-      currentCardIndex: props.cardIndex,
+      currentCardIndex: props.cardIndex || 0,
+      panResponder: {},
+      contentContainerLayout: {},
     };
   }
 
@@ -81,59 +87,64 @@ class CardSwiper extends Component {
   }
 
   handleReceiveNewDataSource = (nextProps) => {
-    if (!_.isEqual(nextProps.dataSource, this.props.dataSource)) {
+    if (!_.isEqual(nextProps.data, this.props.data)) {
       this.setState({ currentCardIndex: nextProps.cardIndex });
     }
-  }
-  
-  handleReceiveNewCardIndex = (nextProps) => {
-    if (nextProps.cardIndex !== this.state.currentCardIndex) {
-      this.setState({ currentCardIndex: nextProps.cardIndex });
-    }
-  }
+  };
 
-  initPanResponder(position) {
-    this.panResponder = PanResponder.create({
+  handleReceiveNewCardIndex = (nextProps) => {
+    if (
+      nextProps.cardIndex !== undefined &&
+      nextProps.cardIndex !== this.state.currentCardIndex
+    ) {
+      this.setState({ currentCardIndex: nextProps.cardIndex });
+    }
+  };
+
+  initPanResponder = (swipeThresholdDistanceBase) => {
+    const panResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (event, gesture) => {
-        position.setValue({ x: gesture.dx, y: gesture.dy });
+        this.swipeCardAnimatedPosition.setValue({ x: gesture.dx, y: gesture.dy });
       },
       onPanResponderRelease: (event, gesture) => {
-        const { swipeThresholdDistanceFactor } = this.props;
-        const { containerLayout } = this;
         // TODO: add swipeThresholdSpeedFactor
-        if (gesture.dx > swipeThresholdDistanceFactor * containerLayout.width) {
+        const { swipeThresholdDistanceFactor } = this.props;
+        if (gesture.dx > swipeThresholdDistanceFactor * swipeThresholdDistanceBase) {
           this.forceSwipe('right');
-        } else if (gesture.dx < -swipeThresholdDistanceFactor * containerLayout.width) {
+        } else if (gesture.dx < -swipeThresholdDistanceFactor * swipeThresholdDistanceBase) {
           this.forceSwipe('left');
         } else {
           this.resetCardPosition();
         }
       },
     });
-  }
+    this.setState({ panResponder });
+  };
 
-  swipeRight() {
+  swipeRight = () => {
     this.forceSwipe('right');
-  }
+  };
 
-  swipeLeft() {
+  swipeLeft = () => {
     this.forceSwipe('left');
-  }
+  };
 
-  forceSwipe(direction) {
+  forceSwipe = (direction) => {
+    const { swipeOutDuration } = this.props;
     const x = direction === 'right' ? SCREEN_WIDTH : -SCREEN_WIDTH;
-    Animated.timing(this.position, {
+
+    Animated.timing(this.swipeCardAnimatedPosition, {
       toValue: { x, y: 0 },
-      duration: this.props.swipeOutDuration,
+      duration: swipeOutDuration,
     }).start(() => this.handleSwipeComplete(direction));
-  }
+  };
 
-  handleSwipeComplete(direction) {
-    const { onSwipeLeft, onSwipeRight, dataSource } = this.props;
-    const item = dataSource[this.state.currentCardIndex];
+  handleSwipeComplete = (direction) => {
+    const { onSwipeLeft, onSwipeRight, data } = this.props;
+    const item = data[this.state.currentCardIndex];
 
-    this.position.setValue({ x: 0, y: 0 });
+    this.swipeCardAnimatedPosition.setValue({ x: 0, y: 0 });
     this.setState({ currentCardIndex: this.state.currentCardIndex + 1 }, () => {
       switch (direction) {
         case 'right':
@@ -145,68 +156,53 @@ class CardSwiper extends Component {
         default:
       }
     });
-  }
+  };
 
-  resetCardPosition() {
-    Animated.spring(this.position, {
+  resetCardPosition = () => {
+    Animated.spring(this.swipeCardAnimatedPosition, {
       toValue: { x: 0, y: 0 },
     }).start();
-  }
+  };
 
-  updateContainerLayout = ({ nativeEvent }) => {
+  updateContentContainerLayout = ({ nativeEvent }) => {
+    const { contentContainerLayout } = this.state;
     if (
-      this.containerLayout.height !== nativeEvent.layout.height &&
-      this.containerLayout.width !== nativeEvent.layout.width
+      contentContainerLayout.height !== nativeEvent.layout.height ||
+      contentContainerLayout.width !== nativeEvent.layout.width
     ) {
-      this.containerLayout = nativeEvent.layout;
-      this.initPanResponder(this.position);
+      this.setState({ contentContainerLayout: nativeEvent.layout }, () => {
+        this.initPanResponder(nativeEvent.layout.width);
+      });
     }
-  }
+  };
 
-  getCardLayoutStyles() {
-    const containerStyle = StyleSheet.flatten(this.props.containerStyle);
+  getCardLayoutStyles = () => {
+    const { contentContainerLayout } = this.state;
 
-    // const containerBorderTopWidth = containerStyle.borderTopWidth || containerStyle.borderWidth || 0;
-    // const containerBorderBottomWidth = containerStyle.borderBottomWidth || containerStyle.borderWidth || 0;
-    // const containerVerticalBorderWidth = containerBorderTopWidth + containerBorderBottomWidth;
+    return {
+      width: contentContainerLayout.width,
+      height: contentContainerLayout.height,
+    };
+  };
 
-    const containerBorderLeftWidth = containerStyle.borderLeftWidth || containerStyle.borderWidth || 0;
-    const containerBorderRightWidth = containerStyle.borderRightWidth || containerStyle.borderWidth || 0;
-    const containerHorizontalBorderWidth = containerBorderLeftWidth + containerBorderRightWidth;
-
-    const containerPaddingTop = containerStyle.paddingTop || containerStyle.padding || 0;
-
-    const containerPaddingLeft = containerStyle.paddingLeft || containerStyle.padding || 0;
-    const containerPaddingRight = containerStyle.paddingRight || containerStyle.padding || 0;
-    const containerHorizontalPadding = containerPaddingLeft + containerPaddingRight;
-
-    const widthOffset = containerHorizontalBorderWidth + containerHorizontalPadding;
-
-    return ({
-      width: this.containerLayout.width - widthOffset,
-      marginTop: containerPaddingTop,
-      marginLeft: containerPaddingLeft,
-    });
-  }
-
-  getCardAnimatedStyles() {
+  getCardAnimatedStyles = () => {
     // TODO: make this basing on both position.x and position.y
-    const rotate = this.position.x.interpolate({
+    const rotate = this.swipeCardAnimatedPosition.x.interpolate({
       // TODO: make this a props
       inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
       outputRange: ['-30deg', '0deg', '30deg'],
     });
-    
+
     return ({
-      ...this.position.getLayout(),
+      ...this.swipeCardAnimatedPosition.getLayout(),
       transform: [{ rotate }],
     });
-  }
-  
-  getBackgroundCardAnimatedStyles(i) {
+  };
+
+  getBackgroundCardAnimatedStyles = (i) => {
     if (i === this.state.currentCardIndex + 1) {
       // TODO: make this basing on both position.x and position.y
-      const scale = this.position.x.interpolate({
+      const scale = this.swipeCardAnimatedPosition.x.interpolate({
         // TODO: make this a props
         inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
         outputRange: [1, 0.95, 1],
@@ -214,24 +210,27 @@ class CardSwiper extends Component {
       return ({ transform: [{ scale }] });
     }
     return ({ opacity: 0 });
-  }
+  };
 
   renderSwipedAll = () => (this.props.renderSwipedAll ? this.props.renderSwipedAll() : (
     <View style={styles.swipedAllContainer}>
       <Text>No more cards</Text>
     </View>
-  ))
+  ));
 
-  renderCards() {
-    if (this.state.currentCardIndex >= this.props.dataSource.length) {
-      this.props.onSwipeAll();
+  renderCards = () => {
+    const { currentCardIndex, panResponder } = this.state;
+    const { data, renderCard, preloadCards, onSwipeAll } = this.props;
+
+    if (currentCardIndex >= data.length) {
+      onSwipeAll();
       return this.renderSwipedAll();
     }
 
-    return this.props.dataSource.map((item, i) => {
-      if (i < this.state.currentCardIndex) {
+    return data.map((item, i) => {
+      if (i < currentCardIndex) {
         return null;
-      } else if (i === this.state.currentCardIndex) {
+      } else if (i === currentCardIndex) {
         return (
           <Animated.View
             key={`react-native-card-swiper-card-${i}`} // eslint-disable-line react/no-array-index-key
@@ -241,45 +240,41 @@ class CardSwiper extends Component {
               this.getCardAnimatedStyles(),
               { zIndex: 99 },
             ]}
-            {...this.panResponder.panHandlers}
+            {...panResponder.panHandlers}
           >
-            {this.props.renderCard(item)}
+            {renderCard(item)}
           </Animated.View>
         );
-      } else if (i < this.state.currentCardIndex + this.props.preloadCards) {
+      } else if (i < currentCardIndex + preloadCards) {
         return (
           <Animated.View
             key={`react-native-card-swiper-card-${i}`} // eslint-disable-line react/no-array-index-key
             style={[
               styles.cardContainer,
-              this.getCardLayoutStyles(),
+              this.getCardLayoutStyles(),              
               this.getBackgroundCardAnimatedStyles(i),
             ]}
           >
-            {this.props.renderCard(item)}
+            {renderCard(item)}
           </Animated.View>
         );
       }
       return null;
     }).reverse();
-  }
+  };
 
   render() {
+    const { containerStyle } = this.props;
+
     return (
-      <View
-        onLayout={this.updateContainerLayout}
-        style={[
-          styles.container,
-          this.props.containerStyle,
-        ]}
-      >
-        {this.renderCards()}
+      <View style={[styles.container, containerStyle]}>
+        <View
+          style={[styles.contentContainer]}
+          onLayout={this.updateContentContainerLayout}
+        >
+          {this.renderCards()}
+        </View>
       </View>
     );
   }
 }
-
-CardSwiper.propTypes = propTypes;
-CardSwiper.defaultProps = defaultProps;
-
-export default CardSwiper;
