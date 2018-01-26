@@ -83,15 +83,8 @@ export default class CardSwiper extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    this.handleReceiveNewDataSource(nextProps);
     this.handleReceiveNewCardIndex(nextProps);
   }
-
-  handleReceiveNewDataSource = (nextProps) => {
-    if (!_.isEqual(nextProps.data, this.props.data)) {
-      this.setState({ currentCardIndex: nextProps.cardIndex });
-    }
-  };
 
   handleReceiveNewCardIndex = (nextProps) => {
     if (
@@ -220,8 +213,14 @@ export default class CardSwiper extends Component {
   ));
 
   renderCards = () => {
-    const { currentCardIndex, panResponder } = this.state;
+    const { currentCardIndex, panResponder, contentContainerLayout } = this.state;
     const { data, renderCard, preloadCards, onSwipeAll } = this.props;
+
+    // NOTE: Don't render cards until card layout style is available
+    // from contentContainerLayout to prevent flickering.
+    if (_.isEmpty(contentContainerLayout)) {
+      return null;
+    }
 
     if (currentCardIndex >= data.length) {
       onSwipeAll();

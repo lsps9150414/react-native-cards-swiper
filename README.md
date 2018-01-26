@@ -1,6 +1,15 @@
 # react-native-card-swiper
 Highly customizable Tinder like card swiper for react-native!
 
+## Features
+- Cards stretch with the container.
+- Controllable current card index.
+
+## Roadmap
+
+### TODO
+
+## Props
 ```
 propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({
