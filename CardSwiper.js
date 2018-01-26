@@ -38,10 +38,10 @@ export default class CardSwiper extends Component {
     data: PropTypes.arrayOf(PropTypes.shape({
       id: PropTypes.any.isRequired,
     })).isRequired,
+    cardIndex: PropTypes.number,
 
     renderCard: PropTypes.func.isRequired,
     renderSwipedAll: PropTypes.func,
-    cardIndex: PropTypes.number,
 
     onSwipeRight: PropTypes.func,
     onSwipeLeft: PropTypes.func,
@@ -56,8 +56,9 @@ export default class CardSwiper extends Component {
 
   static defaultProps = {
     data: [],
-    renderSwipedAll: undefined,
     cardIndex: undefined,
+
+    renderSwipedAll: undefined,
 
     onSwipeRight: item => item,
     onSwipeLeft: item => item,
