@@ -24,7 +24,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   contentContainer: {
-    flex: 1,
     alignSelf: 'stretch',
   },
   cardContainer: {
@@ -57,6 +56,7 @@ export default class CardSwiper extends Component {
     preloadCards: PropTypes.number,
 
     containerStyle: ViewPropTypes.style,
+    enableFillContainer: PropTypes.bool,
   };
 
   static defaultProps = {
@@ -74,18 +74,17 @@ export default class CardSwiper extends Component {
     preloadCards: 3,
 
     containerStyle: undefined,
+    enableFillContainer: false,
   };
 
-  constructor(props) {
-    super(props);
-    this.swipeCardAnimatedPosition = new Animated.ValueXY();
+  state = {
+    currentCardIndex: this.props.cardIndex || 0,
+    panResponder: {},
+    contentContainerLayout: {},
+    cardLayout: {},
+  };
 
-    this.state = {
-      currentCardIndex: props.cardIndex || 0,
-      panResponder: {},
-      contentContainerLayout: {},
-    };
-  }
+  swipeCardAnimatedPosition = new Animated.ValueXY();
 
   componentWillReceiveProps(nextProps) {
     this.handleReceiveNewCardIndex(nextProps);
@@ -188,12 +187,23 @@ export default class CardSwiper extends Component {
     }
   };
 
+  updateCardLayout = ({ nativeEvent }) => {
+    const { cardLayout } = this.state;
+    if (
+      cardLayout.height !== nativeEvent.layout.height ||
+      cardLayout.width !== nativeEvent.layout.width
+    ) {
+      this.setState({ cardLayout: nativeEvent.layout });
+    }
+  };
+
   getCardLayoutStyles = () => {
     const { contentContainerLayout } = this.state;
+    const { enableFillContainer } = this.props;
 
     return {
       width: contentContainerLayout.width,
-      height: contentContainerLayout.height,
+      height: enableFillContainer ? contentContainerLayout.height : undefined,
     };
   };
 
@@ -252,6 +262,7 @@ export default class CardSwiper extends Component {
         return (
           <Animated.View
             key={`react-native-card-swiper-card-${i}`} // eslint-disable-line react/no-array-index-key
+            onLayout={this.updateCardLayout}
             style={[
               styles.cardContainer,
               this.getCardLayoutStyles(),
@@ -282,12 +293,14 @@ export default class CardSwiper extends Component {
   };
 
   render() {
-    const { containerStyle } = this.props;
+    const { containerStyle, enableFillContainer } = this.props;
+    const { cardLayout } = this.state;
+    const contentContainerStyle = enableFillContainer ? { flex: 1 } : { height: cardLayout.height };
 
     return (
       <View style={[styles.container, containerStyle]}>
         <View
-          style={[styles.contentContainer]}
+          style={[styles.contentContainer, contentContainerStyle]}
           onLayout={this.updateContentContainerLayout}
         >
           {this.renderCards()}
