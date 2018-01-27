@@ -1,3 +1,4 @@
+/* eslint-disable import/no-unresolved, import/extensions */
 import _ from 'lodash';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
@@ -12,6 +13,10 @@ import {
 } from 'react-native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const SwipeDirections = {
+  RIGHT: 'RIGHT',
+  LEFT: 'LEFT',
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -60,8 +65,8 @@ export default class CardSwiper extends Component {
 
     renderSwipedAll: undefined,
 
-    onSwipeRight: item => item,
-    onSwipeLeft: item => item,
+    onSwipeRight: ({ cardIndex, item }) => ({ cardIndex, item }),
+    onSwipeLeft: ({ cardIndex, item }) => ({ cardIndex, item }),
     onSwipeAll: () => null,
 
     swipeThresholdDistanceFactor: 0.25,
@@ -105,9 +110,9 @@ export default class CardSwiper extends Component {
         // TODO: add swipeThresholdSpeedFactor
         const { swipeThresholdDistanceFactor } = this.props;
         if (gesture.dx > swipeThresholdDistanceFactor * swipeThresholdDistanceBase) {
-          this.forceSwipe('right');
+          this.forceSwipe(SwipeDirections.RIGHT);
         } else if (gesture.dx < -swipeThresholdDistanceFactor * swipeThresholdDistanceBase) {
-          this.forceSwipe('left');
+          this.forceSwipe(SwipeDirections.LEFT);
         } else {
           this.resetCardPosition();
         }
@@ -117,35 +122,48 @@ export default class CardSwiper extends Component {
   };
 
   swipeRight = () => {
-    this.forceSwipe('right');
+    this.forceSwipe(SwipeDirections.RIGHT);
   };
 
   swipeLeft = () => {
-    this.forceSwipe('left');
+    this.forceSwipe(SwipeDirections.LEFT);
   };
 
   forceSwipe = (direction) => {
     const { swipeOutDuration } = this.props;
-    const x = direction === 'right' ? SCREEN_WIDTH : -SCREEN_WIDTH;
+    let targetPositionX;
+    switch (direction) {
+      case SwipeDirections.RIGHT: {
+        targetPositionX = SCREEN_WIDTH;
+        break;
+      }
+      case SwipeDirections.LEFT: {
+        targetPositionX = -SCREEN_WIDTH;
+        break;
+      }
+      default:
+        break;
+    }
 
     Animated.timing(this.swipeCardAnimatedPosition, {
-      toValue: { x, y: 0 },
+      toValue: { x: targetPositionX, y: 0 },
       duration: swipeOutDuration,
     }).start(() => this.handleSwipeComplete(direction));
   };
 
   handleSwipeComplete = (direction) => {
     const { onSwipeLeft, onSwipeRight, data } = this.props;
-    const item = data[this.state.currentCardIndex];
+    const { currentCardIndex } = this.state;
+    const item = data[currentCardIndex];
 
     this.swipeCardAnimatedPosition.setValue({ x: 0, y: 0 });
-    this.setState({ currentCardIndex: this.state.currentCardIndex + 1 }, () => {
+    this.setState({ currentCardIndex: currentCardIndex + 1 }, () => {
       switch (direction) {
-        case 'right':
-          onSwipeRight(item);
+        case SwipeDirections.RIGHT:
+          onSwipeRight({ cardIndex: currentCardIndex, item });
           break;
-        case 'left':
-          onSwipeLeft(item);
+        case SwipeDirections.LEFT:
+          onSwipeLeft({ cardIndex: currentCardIndex, item });
           break;
         default:
       }
@@ -251,7 +269,7 @@ export default class CardSwiper extends Component {
             key={`react-native-card-swiper-card-${i}`} // eslint-disable-line react/no-array-index-key
             style={[
               styles.cardContainer,
-              this.getCardLayoutStyles(),              
+              this.getCardLayoutStyles(),
               this.getBackgroundCardAnimatedStyles(i),
             ]}
           >
