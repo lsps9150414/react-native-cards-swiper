@@ -295,12 +295,26 @@ export default class CardSwiper extends Component {
   render() {
     const { containerStyle, enableFillContainer } = this.props;
     const { cardLayout } = this.state;
-    const contentContainerStyle = enableFillContainer ? { flex: 1 } : { height: cardLayout.height };
+
+    let contentContainerLayoutStyle;
+    let contentContainerOpacity;
+    if (enableFillContainer) {
+      contentContainerLayoutStyle = { flex: 1 };
+      contentContainerOpacity = undefined;
+    } else {
+      contentContainerLayoutStyle = { height: cardLayout.height };
+      // NOTE: hide contentContainer before cardLayout.height is ready to prevent flickering.
+      contentContainerOpacity = cardLayout.height ? 1 : 0;
+    }
 
     return (
       <View style={[styles.container, containerStyle]}>
         <View
-          style={[styles.contentContainer, contentContainerStyle]}
+          style={[
+            styles.contentContainer,
+            contentContainerLayoutStyle,
+            { opacity: contentContainerOpacity },
+          ]}
           onLayout={this.updateContentContainerLayout}
         >
           {this.renderCards()}
