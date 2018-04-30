@@ -1,6 +1,5 @@
 /* eslint-disable import/no-unresolved, import/extensions */
-import _ from 'lodash';
-import PropTypes from 'prop-types';
+
 import React, { Component } from 'react';
 import {
   Animated,
@@ -11,8 +10,11 @@ import {
   View,
   ViewPropTypes,
 } from 'react-native';
+import _ from 'lodash';
+import PropTypes from 'prop-types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+
 const SwipeDirections = {
   RIGHT: 'RIGHT',
   LEFT: 'LEFT',
