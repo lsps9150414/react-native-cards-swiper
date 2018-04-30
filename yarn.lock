@@ -666,9 +666,9 @@ ignore@^3.3.3:
   version "3.3.5"
   resolved "https://registry.yarnpkg.com/ignore/-/ignore-3.3.5.tgz#c4e715455f6073a8d7e5dae72d2fc9d71663dba6"
 
-import-sort-style-renke@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/import-sort-style-renke/-/import-sort-style-renke-3.0.0.tgz#54d1a1846b061d367e37e8f9320e67fc38add860"
+import-sort-style-absolute@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/import-sort-style-absolute/-/import-sort-style-absolute-1.0.1.tgz#44243183edc3f8eead63727e3d2ca5bf235816fe"
 
 imurmurhash@^0.1.4:
   version "0.1.4"

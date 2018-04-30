@@ -101,7 +101,7 @@ export default class CardSwiper extends Component {
 
   initPanResponder = (swipeThresholdDistanceBase) => {
     const panResponder = PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
       onPanResponderMove: (event, gesture) => {
         this.swipeCardAnimatedPosition.setValue({ x: gesture.dx, y: gesture.dy });
       },
