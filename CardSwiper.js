@@ -122,15 +122,15 @@ export default class CardSwiper extends Component {
     this.setState({ panResponder });
   };
 
-  swipeRight = () => {
-    this.forceSwipe(SwipeDirections.RIGHT);
+  swipeRight = (swipeMethodProps) => {
+    this.forceSwipe(SwipeDirections.RIGHT, swipeMethodProps);
   };
 
-  swipeLeft = () => {
-    this.forceSwipe(SwipeDirections.LEFT);
+  swipeLeft = (swipeMethodProps) => {
+    this.forceSwipe(SwipeDirections.LEFT, swipeMethodProps);
   };
 
-  forceSwipe = (direction) => {
+  forceSwipe = (direction, swipeMethodProps) => {
     const { swipeOutDuration } = this.props;
     let targetPositionX;
     switch (direction) {
@@ -149,10 +149,10 @@ export default class CardSwiper extends Component {
     Animated.timing(this.swipeCardAnimatedPosition, {
       toValue: { x: targetPositionX, y: 0 },
       duration: swipeOutDuration,
-    }).start(() => this.handleSwipeComplete(direction));
+    }).start(() => this.handleSwipeComplete(direction, swipeMethodProps));
   };
 
-  handleSwipeComplete = (direction) => {
+  handleSwipeComplete = (direction, swipeMethodProps) => {
     const { onSwipeLeft, onSwipeRight, data } = this.props;
     const { currentCardIndex } = this.state;
     const item = data[currentCardIndex];
@@ -161,10 +161,10 @@ export default class CardSwiper extends Component {
     this.setState({ currentCardIndex: currentCardIndex + 1 }, () => {
       switch (direction) {
         case SwipeDirections.RIGHT:
-          onSwipeRight({ cardIndex: currentCardIndex, item });
+          onSwipeRight({ cardIndex: currentCardIndex, item, swipeMethodProps });
           break;
         case SwipeDirections.LEFT:
-          onSwipeLeft({ cardIndex: currentCardIndex, item });
+          onSwipeLeft({ cardIndex: currentCardIndex, item, swipeMethodProps });
           break;
         default:
       }
